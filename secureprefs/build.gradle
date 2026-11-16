@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+android {
+    namespace 'io.github.AbhiTheNullPointer.secureprefs'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 23
+        targetSdk 34
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
+}
+
+dependencies {
+    // No external dependencies required
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.AbhiTheNullPointer'
+                artifactId = 'SecureSharedPreference'
+                version = '1.0.0'
+
+                pom {
+                    name = 'SecureSharedPreference'
+                    description = 'Encrypted SharedPreferences for Android with hardware-backed security'
+                    url = 'https://github.com/AbhiTheNullPointer/SecureSharedPreference'
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'https://github.com/AbhiTheNullPointer/SecureSharedPreference/blob/main/LICENSE'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'AbhiTheNullPointer'
+                            name = 'Abhi'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/AbhiTheNullPointer/SecureSharedPreference.git'
+                        developerConnection = 'scm:git:ssh://github.com/AbhiTheNullPointer/SecureSharedPreference.git'
+                        url = 'https://github.com/AbhiTheNullPointer/SecureSharedPreference'
+                    }
+                }
+            }
+        }
+    }
+}
