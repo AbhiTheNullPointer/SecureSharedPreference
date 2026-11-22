@@ -2,6 +2,8 @@ name: Build and publish release assets
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -53,3 +55,15 @@ jobs:
           files: |
             secureprefs/build/outputs/aar/secureprefs-release.aar
             SecureSharedPreference-demo-${{ github.ref_name }}.apk
+
+      - name: Publish APK from main to the rolling release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: main-build
+          target_commitish: ${{ github.sha }}
+          name: Latest main build
+          body: APK built from the latest commit on the main branch. This release is updated automatically after each successful main build.
+          prerelease: true
+          overwrite_files: true
+          files: app/build/outputs/apk/debug/app-debug.apk
