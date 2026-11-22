@@ -1,4 +1,4 @@
-package io.github.AbhiTheNullPointer.secureprefs;
+package io.github.AbhiTheNullPointer.securesharedpreference;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -16,21 +16,19 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 /**
- * GuardSquare - Secure key management using Android KeyStore System.
- *
- * Generates and retrieves an AES-256-GCM key stored inside the hardware-backed
- * Android KeyStore. The raw key material never leaves the secure enclave.
+ * Generates and retrieves an AES-256-GCM key managed by Android Keystore.
+ * Whether the device stores the key in dedicated hardware depends on the device.
  *
  * Compatible with Android API 23+ (Marshmallow and above).
  */
 public class GuardSquare {
 
-    private static final String ALIAS           = "NULLPOINTER_BHAIYA_SECURE_PREFS_V1";
+    private static final String ALIAS = "ABHI_THE_NULL_POINTER_SECURE_PREFS_V1";
     private static final String ANDROID_KEYSTORE = "AndroidKeyStore";
 
     /**
      * Generates an AES-256-GCM key in AndroidKeyStore if one does not already exist.
-     * Safe to call on every app start — it is a no-op when the key is already present.
+     * Safe to call at startup; this method does nothing when the key already exists.
      */
     public void generateKey() throws KeyStoreException, CertificateException, IOException,
             NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
@@ -42,19 +40,14 @@ public class GuardSquare {
             return; // Key already exists
         }
 
-        KeyGenerator keyGenerator = KeyGenerator.getInstance(
-                KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE);
-
-        keyGenerator.init(
-                new KeyGenParameterSpec.Builder(
-                        ALIAS,
-                        KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                        .setKeySize(256)
-                        // Randomised encryption ensures a fresh IV is required each time.
-                        .setRandomizedEncryptionRequired(true)
-                        .build());
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE);
+        KeyGenParameterSpec keySpec = new KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setKeySize(256)
+                .setRandomizedEncryptionRequired(true)
+                .build();
+        keyGenerator.init(keySpec);
 
         keyGenerator.generateKey();
     }
@@ -70,12 +63,10 @@ public class GuardSquare {
         KeyStore keyStore = KeyStore.getInstance(ANDROID_KEYSTORE);
         keyStore.load(null);
 
-        KeyStore.SecretKeyEntry entry =
-                (KeyStore.SecretKeyEntry) keyStore.getEntry(ALIAS, null);
+        KeyStore.SecretKeyEntry entry = (KeyStore.SecretKeyEntry) keyStore.getEntry(ALIAS, null);
 
         if (entry == null) {
-            throw new IllegalStateException(
-                    "Encryption key not found in KeyStore. Call generateKey() first.");
+            throw new IllegalStateException("Encryption key not found in Android Keystore. Call generateKey() first.");
         }
 
         return entry.getSecretKey();

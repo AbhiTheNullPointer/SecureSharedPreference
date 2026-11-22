@@ -5,14 +5,14 @@
 ### Before creating PR
 
 1. Fork the repo
-2. Create a branch with the name of the issue that you are working on
+2. Create a branch that describes the issue or change
 3. Test your changes on multiple Android versions (API 23+)
 4. Ensure code follows existing style and conventions
 5. Commit & push your code
 
 ### Process for merging a PR
 
-1. Open a PR from your branch on your fork to the main master branch
+1. Open a pull request from your branch to the `main` branch
 2. We will review your code
 3. Once we approve your code go ahead and merge it
 
@@ -39,4 +39,4 @@
 
 Open an issue or reach out to the maintainers.
 
-Thank you for contributing! 🎉
+Thank you for contributing.

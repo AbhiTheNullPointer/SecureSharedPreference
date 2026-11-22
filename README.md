@@ -1,42 +1,49 @@
 # SecureSharedPreference
 
-![GitHub issues](https://img.shields.io/github/issues/AbhiTheNullPointer/SecureSharedPreference)
-![GitHub forks](https://img.shields.io/github/forks/AbhiTheNullPointer/SecureSharedPreference)
-![GitHub stars](https://img.shields.io/github/stars/AbhiTheNullPointer/SecureSharedPreference)
-[![](https://jitpack.io/v/AbhiTheNullPointer/SecureSharedPreference.svg)](https://jitpack.io/#AbhiTheNullPointer/SecureSharedPreference)
-![License](https://img.shields.io/github/license/AbhiTheNullPointer/SecureSharedPreference)
-[![CI](https://github.com/AbhiTheNullPointer/SecureSharedPreference/actions/workflows/ci.yml/badge.svg)](https://github.com/AbhiTheNullPointer/SecureSharedPreference/actions/workflows/ci.yml)
+An Android library for storing strings and primitive values in an encrypted preferences file. It uses an AES key held by Android Keystore and AES-GCM authenticated encryption. The library has no third-party runtime dependencies.
 
-An Android library that provides **encrypted SharedPreferences** with hardware-backed security using Android KeyStore. Drop-in replacement for standard SharedPreferences with automatic AES-256-GCM encryption.
+## Requirements
 
-> **📦 Try it now** — download the latest demo APK from the [Releases](https://github.com/AbhiTheNullPointer/SecureSharedPreference/releases/latest) page and sideload it to test the library on a real device without writing any code.
+- Android 6.0 (API 23) or newer
+- Java 17 source and target compatibility
+- Android Keystore support
 
-## Why SecureSharedPreference?
+The library source is compiled with Android API 36 and supports devices from API 23 onward. The demo app targets API 36. Android Keystore AES key generation is only available from API 23; older Android versions are not supported by this implementation.
 
-- 🔐 **Hardware-backed encryption** — Keys live in Android KeyStore, never exposed to the app
-- ⚡ **Fast** — Key cached after first load; no repeated KeyStore round-trips
-- 🚀 **Zero dependencies** — Pure Android SDK, no third-party libraries
-- 📱 **Wide compatibility** — Android 6.0+ (API 23+), tested on emulators and real devices
-- 🔧 **Simple API** — Identical shape to standard `SharedPreferences`
-- ✅ **No deprecated APIs** — Modern, future-proof code
-- 🛡 **Tamper-proof** — AES-GCM authentication tag detects any modification
+Hardware-backed storage depends on the device. Android Keystore may use a hardware security module when one is available; this library does not require or verify that the key is hardware-backed.
 
-## Installation
+## Why use this library?
 
-### Step 1 — Add JitPack to your root `build.gradle` (or `settings.gradle`)
+### Keep sensitive preferences simple
 
-**Legacy `build.gradle` style:**
-```gradle
-allprojects {
-    repositories {
-        maven { url 'https://jitpack.io' }
-    }
-}
+Need to save a small private value without building an encryption layer yourself? SecureSharedPreference gives your Android app a straightforward Java API for storing strings and primitive values encrypted with AES-GCM, using a key managed by Android Keystore.
+
+```java
+SecureSharedPreference preferences = new SecureSharedPreference(context, "user_preferences");
+preferences.setData("access_token", token);
+String savedToken = preferences.getData("access_token", "");
 ```
 
-**Modern `settings.gradle` style (Gradle 7+):**
-```gradle
+It is designed to be easy to add to an existing app: no third-party runtime dependencies, familiar preference-style operations, support for Android 6.0 (API 23) and newer, and an interactive demo app to explore the API. The library includes typed getters and setters, `contains`, `removeData`, and `clear`.
+
+Android's regular `SharedPreferences` is still a good fit for non-sensitive settings such as a theme or selected language. For small values that your app wants to keep encrypted at rest, SecureSharedPreference offers a focused alternative. AndroidX `EncryptedSharedPreferences` is deprecated in the [official Android API reference](https://developer.android.com/reference/androidx/security/crypto/EncryptedSharedPreferences); this project is an independent open-source library, not an official Android or Google product.
+
+SecureSharedPreference is intentionally focused on small preference values rather than every storage need. It does not implement the full `SharedPreferences` API, and its data format is not compatible with AndroidX `EncryptedSharedPreferences`. As with any on-device storage, choose based on your app's security needs and handle backup, key invalidation, and migration deliberately. Android Keystore may use hardware-backed key storage when the device supports it, but this library does not require or verify hardware backing.
+
+The Java package is `io.github.AbhiTheNullPointer.securesharedpreference`. If updating from an earlier package, change the import to:
+
+```java
+import io.github.AbhiTheNullPointer.securesharedpreference.SecureSharedPreference;
+```
+
+
+## Install
+
+Add JitPack to the repositories in `settings.gradle`:
+
+```groovy
 dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
@@ -45,86 +52,69 @@ dependencyResolutionManagement {
 }
 ```
 
-### Step 2 — Add the dependency
+Add the dependency to the app module. Replace `VERSION` with a published release tag:
 
-```gradle
+```groovy
 dependencies {
-    implementation 'com.github.AbhiTheNullPointer:SecureSharedPreference:1.0.0'
+    implementation 'com.github.AbhiTheNullPointer:SecureSharedPreference:VERSION'
 }
 ```
 
-## Usage
+## Quick start
 
 ```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
+import io.github.AbhiTheNullPointer.securesharedpreference.SecureSharedPreference;
 
-// One-line setup
-SecureSharedPreference prefs = new SecureSharedPreference(context, "my_prefs");
+SecureSharedPreference preferences = new SecureSharedPreference(context, "user_preferences");
 
-// Store (automatically encrypted)
-prefs.putString("username", "john_doe");
-prefs.putInt("user_id", 12345);
-prefs.putLong("timestamp", System.currentTimeMillis());
-prefs.putFloat("score", 98.6f);
-prefs.putBoolean("is_premium", true);
+preferences.setData("username", "alex");
+preferences.setData("user_id", 42);
+preferences.setData("last_login", System.currentTimeMillis());
+preferences.setData("score", 98.6f);
+preferences.setData("premium", true);
 
-// Retrieve (automatically decrypted)
-String  username  = prefs.getString("username", "guest");
-int     userId    = prefs.getInt("user_id", 0);
-long    ts        = prefs.getLong("timestamp", 0L);
-float   score     = prefs.getFloat("score", 0f);
-boolean isPremium = prefs.getBoolean("is_premium", false);
+String username = preferences.getData("username", "guest");
+int userId = preferences.getData("user_id", 0);
+long lastLogin = preferences.getData("last_login", 0L);
+float score = preferences.getData("score", 0f);
+boolean premium = preferences.getData("premium", false);
 
-// Utility
-boolean exists = prefs.contains("username");
-prefs.remove("username");   // remove one key
-prefs.clear();              // remove all keys (KeyStore key is preserved)
+boolean exists = preferences.contains("username");
+preferences.removeData("username");
+preferences.clear();
 ```
 
-See [EXAMPLE.md](EXAMPLE.md) for more examples.
+The typed methods `putString`/`getString`, `putInt`/`getInt`, `putLong`/`getLong`, `putFloat`/`getFloat`, and `putBoolean`/`getBoolean` are also available. `setData` and `getData` are overloaded for each of those types.
 
-## How It Works
+Construct the class with an application or activity context. Initialization can fail if Android Keystore is unavailable. Write operations can also throw a `RuntimeException` if encryption or persistence fails. Read operations return their supplied default for missing, malformed, or undecryptable values.
 
-1. **Key generation** — On first use an AES-256 key is generated inside Android KeyStore (hardware-backed on most modern devices). It never leaves the secure enclave.
-2. **Key lookup** — Key names are stored as `Base64(SHA-256(name))` so the same name always maps to the same slot, without exposing what the key is.
-3. **Value encryption** — Each value is encrypted with AES-GCM. A fresh 12-byte random IV is generated per write and prepended to the ciphertext, so the same value stored twice produces different ciphertext.
-4. **Retrieval** — On read, the IV is extracted, the value decrypted, and the GCM authentication tag verified — any tampering throws a `BadPaddingException`, which is caught and causes the default value to be returned.
+## Encryption and storage
 
-## Supported Types
+- A 256-bit AES key is generated and retained by Android Keystore.
+- Values are encrypted with AES-GCM and a fresh IV generated by Android Keystore for each encryption.
+- Preference names are stored as Base64-encoded SHA-256 hashes. This obscures names but does not make guessable names secret.
+- Values are stored as Base64 text in a private `SharedPreferences` file.
+- `clear()` removes values from the preferences file; the Keystore key remains.
+- Reinstalling the app, clearing app data, restoring preferences without the matching Keystore key, or invalidating the key can make previous values unreadable. Back up or migrate data according to your app's requirements.
 
-| Method | Type |
-|--------|------|
-| `putString` / `getString` | `String` |
-| `putInt` / `getInt` | `int` |
-| `putLong` / `getLong` | `long` |
-| `putFloat` / `getFloat` | `float` |
-| `putBoolean` / `getBoolean` | `boolean` |
+The class is not a complete implementation of Android's `SharedPreferences` interface. It supports only `String`, `int`, `long`, `float`, and `boolean`; it does not provide listeners, sets, or editor transactions. Choose storage based on your app's threat model and test key invalidation and backup behavior on supported devices.
 
-## Comparison
+## Demo app
 
-| Feature | SecureSharedPreference | androidx.security.crypto | Standard SharedPreferences |
-|---------|------------------------|--------------------------|----------------------------|
-| Encryption | ✅ AES-256-GCM | ✅ AES-256-GCM | ❌ None |
-| Hardware-backed | ✅ Yes | ✅ Yes | ❌ No |
-| Zero dependencies | ✅ Yes | ❌ No | ✅ Yes |
-| Deprecated APIs | ✅ None | ⚠️ Some | ✅ None |
-| Setup lines | ✅ 1 | ⚠️ ~5 | ✅ 1 |
+The `:app` module is a small interactive demo. It lets you save, load, check whether a key exists, remove, and clear values. Run all checks to see results for contains, set/get, remove, clear, defaults, and every supported value type. Test values use unique keys, and the clear check uses a separate preferences file so existing demo values are preserved. The demo is not a production app.
 
-## Requirements
+## GitHub releases
 
-- **Min SDK**: 23 (Android 6.0 Marshmallow)
-- **Compile SDK**: 34
-- **Permissions**: None
-- **Dependencies**: None
+Pushing a version tag such as `v1.0.0` starts the GitHub Actions release workflow. It builds the library AAR and attaches an installable, debug-signed demo APK to the GitHub Release. The APK is for trying the demo; it is not signed with a production release key.
 
-## Contributing
+## Build
 
-Pull requests are welcome. Please open an issue first to discuss major changes.
+Open the project in Android Studio with Android SDK 36 installed, or use the Gradle wrapper:
 
-## Author
-
-Made with ❤️ by [AbhiTheNullPointer](https://github.com/AbhiTheNullPointer)
+```shell
+./gradlew :secureprefs:assembleRelease :app:assembleDebug
+```
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the MIT License. See [LICENSE](LICENSE).

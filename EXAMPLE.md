@@ -1,216 +1,99 @@
-# GuardSquare Usage Examples
+# Usage examples
 
-## Basic Example
+## Basic usage
 
 ```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
+import android.content.Context;
+import io.github.AbhiTheNullPointer.securesharedpreference.SecureSharedPreference;
 
-public class MainActivity extends AppCompatActivity {
-    private SecureSharedPreference securePrefs;
+public final class UserSettings {
+    private final SecureSharedPreference preferences;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        // Initialize
-        securePrefs = new SecureSharedPreference(this, "user_preferences");
-
-        // Save user data
-        saveUserData();
-
-        // Load user data
-        loadUserData();
+    public UserSettings(Context context) {
+        preferences = new SecureSharedPreference(
+                context.getApplicationContext(), "user_settings");
     }
 
-    private void saveUserData() {
-        securePrefs.putString("username", "john_doe");
-        securePrefs.putString("email", "john@example.com");
-        securePrefs.putInt("userId", 12345);
-        securePrefs.putBoolean("isPremium", true);
+    public void save(String username, int userId, boolean premium) {
+        preferences.putString("username", username);
+        preferences.putInt("user_id", userId);
+        preferences.putBoolean("premium", premium);
     }
 
-    private void loadUserData() {
-        String username = securePrefs.getString("username", "Guest");
-        String email = securePrefs.getString("email", "");
-        int userId = securePrefs.getInt("userId", 0);
-        boolean isPremium = securePrefs.getBoolean("isPremium", false);
+    public String username() {
+        return preferences.getString("username", "guest");
+    }
 
-        Log.d("UserData", "Username: " + username);
-        Log.d("UserData", "Email: " + email);
-        Log.d("UserData", "User ID: " + userId);
-        Log.d("UserData", "Premium: " + isPremium);
+    public int userId() {
+        return preferences.getInt("user_id", 0);
+    }
+
+    public boolean isPremium() {
+        return preferences.getBoolean("premium", false);
     }
 }
 ```
 
-## Login Session Example
+## Session values
 
 ```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
+public final class SessionStore {
+    private final SecureSharedPreference preferences;
 
-public class SessionManager {
-    private SecureSharedPreference prefs;
-    private static final String PREF_NAME = "user_session";
-
-    public SessionManager(Context context) {
-        prefs = new SecureSharedPreference(context, PREF_NAME);
+    public SessionStore(Context context) {
+        preferences = new SecureSharedPreference(context, "session");
     }
 
-    public void createLoginSession(String username, String token, int userId) {
-        prefs.putString("username", username);
-        prefs.putString("auth_token", token);
-        prefs.putInt("user_id", userId);
-        prefs.putBoolean("is_logged_in", true);
+    public void save(String accountId, String token) {
+        preferences.putString("account_id", accountId);
+        preferences.putString("access_token", token);
     }
 
-    public boolean isLoggedIn() {
-        return prefs.getBoolean("is_logged_in", false);
+    public String accessToken() {
+        return preferences.getString("access_token", "");
     }
 
-    public String getAuthToken() {
-        return prefs.getString("auth_token", "");
-    }
-
-    public void logout() {
-        prefs.clear();
+    public void clear() {
+        preferences.clear();
     }
 }
 ```
 
-## Settings Example
+`clear()` removes all entries in this preferences file but keeps the Keystore key. If a value cannot be decrypted, getters return the default value supplied by the caller. Keep any fallback or recovery behavior specific to your application.
+
+## Migrating existing values
+
+Migration must account for the value types used by the old preferences file. Copy and verify each value before removing anything from the old file. For example:
 
 ```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
-
-public class AppSettings {
-    private SecureSharedPreference prefs;
-
-    public AppSettings(Context context) {
-        prefs = new SecureSharedPreference(context, "app_settings");
-    }
-
-    public void setNotificationsEnabled(boolean enabled) {
-        prefs.putBoolean("notifications_enabled", enabled);
-    }
-
-    public boolean isNotificationsEnabled() {
-        return prefs.getBoolean("notifications_enabled", true);
-    }
-
-    public void setTheme(String theme) {
-        prefs.putString("theme", theme);
-    }
-
-    public String getTheme() {
-        return prefs.getString("theme", "light");
-    }
-
-    public void setFontSize(int size) {
-        prefs.putInt("font_size", size);
-    }
-
-    public int getFontSize() {
-        return prefs.getInt("font_size", 14);
-    }
-}
-```
-
-## API Key Storage Example
-
-```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
-
-public class ApiKeyManager {
-    private SecureSharedPreference prefs;
-
-    public ApiKeyManager(Context context) {
-        prefs = new SecureSharedPreference(context, "api_keys");
-    }
-
-    public void saveApiKey(String serviceName, String apiKey) {
-        prefs.putString(serviceName + "_api_key", apiKey);
-    }
-
-    public String getApiKey(String serviceName) {
-        return prefs.getString(serviceName + "_api_key", "");
-    }
-
-    public boolean hasApiKey(String serviceName) {
-        return prefs.contains(serviceName + "_api_key");
-    }
-
-    public void removeApiKey(String serviceName) {
-        prefs.remove(serviceName + "_api_key");
-    }
-}
-```
-
-## Migration from Standard SharedPreferences
-
-```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
+import android.content.Context;
 import android.content.SharedPreferences;
+import io.github.AbhiTheNullPointer.securesharedpreference.SecureSharedPreference;
 
-public class PreferencesMigration {
-    
-    public static void migrateToSecure(Context context) {
-        // Old unencrypted preferences
-        SharedPreferences oldPrefs = context.getSharedPreferences("old_prefs", Context.MODE_PRIVATE);
-        
-        // New encrypted preferences
-        SecureSharedPreference securePrefs = new SecureSharedPreference(context, "secure_prefs");
-        
-        // Migrate string values
-        String username = oldPrefs.getString("username", "");
-        if (!username.isEmpty()) {
-            securePrefs.putString("username", username);
-        }
-        
-        // Migrate int values
-        int userId = oldPrefs.getInt("user_id", 0);
-        if (userId != 0) {
-            securePrefs.putInt("user_id", userId);
-        }
-        
-        // Migrate boolean values
-        boolean isLoggedIn = oldPrefs.getBoolean("is_logged_in", false);
-        securePrefs.putBoolean("is_logged_in", isLoggedIn);
-        
-        // Clear old preferences after migration
-        oldPrefs.edit().clear().apply();
-    }
+SharedPreferences oldPreferences = context.getSharedPreferences(
+        "old_settings", Context.MODE_PRIVATE);
+SecureSharedPreference securePreferences = new SecureSharedPreference(
+        context, "secure_settings");
+
+if (oldPreferences.contains("username")) {
+    securePreferences.putString("username", oldPreferences.getString("username", ""));
+}
+if (oldPreferences.contains("user_id")) {
+    securePreferences.putInt("user_id", oldPreferences.getInt("user_id", 0));
 }
 ```
 
-## Error Handling
+Do not delete the old preferences until your app has verified the migrated data and has a recovery plan. This library does not provide a bulk import or transactional migration API.
+
+## Handling initialization errors
+
+Creating the object initializes an Android Keystore key and can fail on unsupported or misconfigured devices. Catch the exception at your app's boundary and decide how the app should recover:
 
 ```java
-import io.github.AbhiTheNullPointer.secureprefs.SecureSharedPreference;
-
-public class SafePreferences {
-    private SecureSharedPreference prefs;
-
-    public SafePreferences(Context context) {
-        try {
-            prefs = new SecureSharedPreference(context, "safe_prefs");
-        } catch (RuntimeException e) {
-            Log.e("SafePreferences", "Failed to initialize secure preferences", e);
-            // Fallback to standard SharedPreferences if needed
-        }
-    }
-
-    public void saveData(String key, String value) {
-        if (prefs != null) {
-            prefs.putString(key, value);
-        }
-    }
-
-    public String getData(String key, String defaultValue) {
-        if (prefs != null) {
-            return prefs.getString(key, defaultValue);
-        }
-        return defaultValue;
-    }
+try {
+    SecureSharedPreference preferences =
+            new SecureSharedPreference(context, "private_values");
+} catch (RuntimeException exception) {
+    // Report the failure and use an application-specific recovery path.
 }
 ```

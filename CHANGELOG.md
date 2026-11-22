@@ -1,23 +1,20 @@
 # Changelog
 
-## 1.0.0 — 2026-03-06
+## Unreleased
 
-### Added
-- AES-256-GCM authenticated encryption via Android KeyStore
-- Hardware-backed key storage; key material never leaves the secure enclave
-- Support for `String`, `int`, `long`, `float`, and `boolean` types
-- Zero external dependencies
-- Compatible with Android API 23+
+- Fix AES-GCM encryption by letting Android Keystore generate the IV required by randomized encryption keys.
+- Improve demo error handling and replace the demo screen with a clearer interface.
+- Update Android Gradle Plugin, Gradle wrapper, and compile SDK versions.
+- Move the Java API to `io.github.AbhiTheNullPointer.securesharedpreference`.
+- Keep the minimum supported Android version at API 23; the library is compatible with newer SDK versions.
+- Set Java source and target compatibility to Java 17.
+- Add overloaded `setData` and `getData` methods and a `removeData` alias.
+- Expand the demo checks to cover CRUD operations, defaults, and all supported value types.
+- Clarify the library's security properties and limitations in the documentation.
 
-### Fixed (in this commit)
-- **Critical**: Key names now stored as `SHA-256` hashes instead of AES-GCM ciphertext.
-  AES-GCM uses a random IV so the same key name would produce a different ciphertext
-  on every call, making it impossible to ever look up a previously stored value.
-- Removed `setUnlockedDeviceRequired(true)` which caused `KeyPermanentlyInvalidatedException`
-  on lock-screen and background access scenarios.
-- Removed `buildscript` block from module `build.gradle` (conflicted with root classpath).
-- Aligned Gradle wrapper (7.5) with AGP 7.4.2 (previously used 8.0 which is incompatible).
-- Added `getKey()` null-check to prevent NPE when key entry is missing.
-- Added `long` and `float` type support.
-- Added demo `:app` module so a testable APK can be generated.
-- Added `.github/workflows/ci.yml` and `release.yml` for automatic builds and APK uploads.
+## 1.0.0 - 2026-03-06
+
+- Add AES-GCM encryption using Android Keystore.
+- Add support for `String`, `int`, `long`, `float`, and `boolean` values.
+- Hash preference names with SHA-256 for deterministic lookup.
+- Include an interactive demo app.

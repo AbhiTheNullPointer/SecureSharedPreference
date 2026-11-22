@@ -1,4 +1,4 @@
-package io.github.AbhiTheNullPointer.secureprefs;
+package io.github.AbhiTheNullPointer.securesharedpreference;
 
 import android.util.Base64;
 
@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -17,7 +16,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 /**
- * GuardSquareEncryption - High-performance AES-GCM encryption implementation
+ * AES-GCM encryption and decryption for preference values.
  * 
  * This class provides authenticated encryption using AES-GCM (Galois/Counter Mode).
  * GCM mode provides both confidentiality and authenticity, protecting against
@@ -29,14 +28,13 @@ import javax.crypto.spec.GCMParameterSpec;
  * - 128-bit authentication tag for integrity verification
  * - Base64 encoding for safe string storage
  * - No deprecated methods
- * - Faster than androidx.security.crypto
  * 
  * Security Properties:
  * - Confidentiality: Data is encrypted and unreadable without the key
  * - Authenticity: Any tampering with encrypted data is detected
  * - Integrity: Data cannot be modified without detection
  * 
- * @author NullPointerBhaiya (Abhi)
+ * @author AbhiTheNullPointer (Abhi)
  * @version 1.0
  * @since API 23
  */
@@ -51,55 +49,35 @@ public class GuardSquareEncryption {
     // GCM authentication tag length in bits (128 bits provides strong security)
     private static final int GCM_TAG_LENGTH = 128;
     
-    // Cryptographically secure random number generator for IV generation
-    private final SecureRandom secureRandom;
-
     /**
-     * Constructor - Initializes the encryption engine
-     * Creates a SecureRandom instance for generating unique IVs
-     */
-    public GuardSquareEncryption() {
-        this.secureRandom = new SecureRandom();
-    }
-
-    /**
-     * Encrypts plaintext using AES-GCM authenticated encryption.
-     * 
-     * Process:
-     * 1. Generate a random 12-byte IV (Initialization Vector)
-     * 2. Initialize AES-GCM cipher with the key and IV
-     * 3. Encrypt the plaintext
-     * 4. Combine IV + ciphertext (IV is needed for decryption)
-     * 5. Encode as Base64 for safe string storage
-     * 
-     * The IV is prepended to the ciphertext because:
-     * - IV must be unique for each encryption
-     * - IV is not secret and can be stored with ciphertext
-     * - Decryption requires the same IV used during encryption
-     * 
+     * Encrypts UTF-8 plaintext with AES-GCM and returns the IV and ciphertext as Base64 text.
+     * Android Keystore generates the IV during cipher initialization. The IV is stored with the
+     * ciphertext because decryption needs it; the IV is not secret.
+     *
      * @param plaintext The text to encrypt (UTF-8 encoded)
      * @param key The SecretKey from Android KeyStore
      * @return Base64 encoded string containing [IV + Ciphertext + Auth Tag]
      * @throws NoSuchPaddingException if padding scheme is not available
      * @throws NoSuchAlgorithmException if AES/GCM is not available
-     * @throws InvalidAlgorithmParameterException if GCM parameters are invalid
+     * @throws InvalidAlgorithmParameterException if the GCM parameters are invalid
      * @throws InvalidKeyException if the key is invalid
      * @throws IllegalBlockSizeException if block size is incorrect
-     * @throws BadPaddingException if padding is incorrect (shouldn't happen with GCM)
+     * @throws BadPaddingException if the encryption operation fails
      */
     public String encrypt(String plaintext, SecretKey key) throws NoSuchPaddingException, 
             NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, 
             IllegalBlockSizeException, BadPaddingException {
         
-        // Generate a random IV for this encryption operation
-        // Each encryption MUST use a unique IV for security
-        byte[] iv = new byte[GCM_IV_LENGTH];
-        secureRandom.nextBytes(iv);
-
         // Initialize cipher in encryption mode
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-        cipher.init(Cipher.ENCRYPT_MODE, key, parameterSpec);
+        // AndroidKeyStore requires randomized encryption to generate the IV itself.
+        // Supplying a caller-generated IV is rejected when the key enforces
+        // setRandomizedEncryptionRequired(true).
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        byte[] iv = cipher.getIV();
+        if (iv == null || iv.length != GCM_IV_LENGTH) {
+            throw new IllegalStateException("AndroidKeyStore returned an invalid AES-GCM IV");
+        }
 
         // Encrypt the plaintext
         // Output includes: encrypted data + 16-byte authentication tag
@@ -147,6 +125,9 @@ public class GuardSquareEncryption {
         
         // Decode Base64 string to byte array
         byte[] decoded = Base64.decode(ciphertext, Base64.NO_WRAP);
+        if (decoded.length < GCM_IV_LENGTH + GCM_TAG_LENGTH / 8) {
+            throw new IllegalArgumentException("Encrypted value is too short");
+        }
         ByteBuffer byteBuffer = ByteBuffer.wrap(decoded);
 
         // Extract IV from first 12 bytes

@@ -8,7 +8,7 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
         <activity
-            android:name="io.github.AbhiTheNullPointer.secureprefs.demo.MainActivity"
+            android:name="io.github.AbhiTheNullPointer.securesharedpreference.demo.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

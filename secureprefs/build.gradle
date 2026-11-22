@@ -4,17 +4,16 @@ plugins {
 }
 
 android {
-    namespace 'io.github.AbhiTheNullPointer.secureprefs'
-    compileSdk 34
+    namespace 'io.github.AbhiTheNullPointer.securesharedpreference'
+    compileSdk 36
 
     defaultConfig {
         minSdk 23
-        targetSdk 34
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     publishing {
@@ -22,10 +21,6 @@ android {
             withSourcesJar()
         }
     }
-}
-
-dependencies {
-    // No external dependencies required
 }
 
 afterEvaluate {
@@ -39,7 +34,7 @@ afterEvaluate {
 
                 pom {
                     name = 'SecureSharedPreference'
-                    description = 'Encrypted SharedPreferences for Android with hardware-backed security'
+                    description = 'Encrypted SharedPreferences for Android using Android Keystore'
                     url = 'https://github.com/AbhiTheNullPointer/SecureSharedPreference'
                     licenses {
                         license {
