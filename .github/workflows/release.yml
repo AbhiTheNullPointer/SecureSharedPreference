@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - 'v*.*.*'
   workflow_dispatch:
 
 permissions:
@@ -60,10 +60,15 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: main-build
+          tag_name: latest-apk
           target_commitish: ${{ github.sha }}
-          name: Latest main build
-          body: APK built from the latest commit on the main branch. This release is updated automatically after each successful main build.
+          name: Latest APK
+          body: |
+            ## Download
+
+            [Download the latest demo APK](https://github.com/${{ github.repository }}/releases/download/latest-apk/app-debug.apk)
+
+            This APK is built from the latest successful build on the `main` branch and is replaced after each successful build.
           prerelease: true
           overwrite_files: true
           files: app/build/outputs/apk/debug/app-debug.apk
